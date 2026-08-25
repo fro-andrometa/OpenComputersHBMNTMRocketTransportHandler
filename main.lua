@@ -63,6 +63,7 @@ local rocket_transport_insert_side = inventory_sides["tile.crane_inserter"]
 local spatial_io_side = inventory_sides["tile.appliedenergistics2.BlockSpatialIOPort"]
 print("loading function")
 -- Function called when player hits The Button.
+-- Refer to Redstone I/O parameters for the parameters of this function.
 local function transportPlayer(event_name, address, side_signalled, old_value, new_value, color)
 	if not event_name then return end -- this is simply used to allow for this function to be directly called
 	if old_value ~= 0 then return end -- needs no signal beforehand.
