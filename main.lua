@@ -23,7 +23,7 @@ end
 --return: {[int]: [} | key-value pair of slot number & the item contained within, along with relevant info.
 local function detect_item(transposer, block_side, inventory_offset, cancel_early)
 	assert(type(transposer) == "table" and transposer["getStackInSlot"] and transposer["getInventorySize"], "Transposer provided was not of a Transposer Component!")
-	assert(type(block_side) == "number" and block_side > 0 and block_side < 7, "Block side provided was not a valid side!")
+	assert(type(block_side) == "number" and block_side >= 0 and block_side <= 5, "Block side provided was not a valid side!")
 	assert(type(inventory_offset) == "number" or type(inventory_offset) == "nil", "Inventory offset was not a number or nothing!")
 
 	if not inventory_offset then inventory_offset = 0 end
@@ -64,66 +64,57 @@ assert(inventory_sides["tile.crane_inserter"], "Attach an inserter to the adapte
 assert(inventory_sides["tile.appliedenergistics2.BlockSpatialIOPort"], "Attach the Spatial I/O port to the adapter! Make sure it has its pylons and power, too!")
 
 -- Now that the sides have been received, begin polling... (WHYYY!)
-local success, error_msg = pcall(function()
-	print("loading main")
-	local event = require("event")
+print("loading main")
+local event = require("event")
 
-	local lock = false
-	local rocket_transport_side = inventory_sides["tile.crane_extractor"]
-	local rocket_transport_insert_side = inventory_sides["tile.crane_inserter"]
-	local spatial_io_side = inventory_sides["tile.appliedenergistics2.BlockSpatialIOPort"]
-	print("loading function")
-	-- Function called when player hits The Button.
-	local function transportPlayer(event_name, address, side_signalled, old_value, new_value, color)
-		if not event_name then return end -- this is simply used to allow for this function to be directly called
-		if old_value ~= 0 then return end -- needs no signal beforehand.
-		if new_value == 0 then return end -- this probably shouldnt fire, BUT.. creepermusher17 REALLY likes quantum tunnelling my desh stamps into the ae2 network, so... he'll figure out a way to trigger this, too.
-		if lock then return end -- impatient players...
-		if table_length(detect_item(transposer, spatial_io_side, nil, true)) == 0 then return end -- there's no spatial i/o cell in 1st slot (or any), cancel.
-		
-		-- EMIT SIGNAL!! THE SHEER POWER OF THE SUN!!!! BLAST IT!!! *BOOM*
-		while detect_item(transposer, spatial_io_side)[2] == nil do 
-			spatial_io_signaller.setOutput({9001}) -- it's over 9000... i dont even watch DBZ, why am i making this reference..
-			os.sleep(2) 
-			spatial_io_signaller.setOutput({0}) 
-		end
-		-- once it has been detected (it BETTER be detected... lest it go into an infinite loop.), reset.
-		spatial_io_signaller.setOutput({0})
-		transposer.transferItem(spatial_io_side, rocket_transport_insert_side, 1, 2, 1) -- hopefully no one floods the insertion thing with hematite.
+local lock = false
+local rocket_transport_side = inventory_sides["tile.crane_extractor"]
+local rocket_transport_insert_side = inventory_sides["tile.crane_inserter"]
+local spatial_io_side = inventory_sides["tile.appliedenergistics2.BlockSpatialIOPort"]
+print("loading function")
+-- Function called when player hits The Button.
+local function transportPlayer(event_name, address, side_signalled, old_value, new_value, color)
+	if not event_name then return end -- this is simply used to allow for this function to be directly called
+	if old_value ~= 0 then return end -- needs no signal beforehand.
+	if new_value == 0 then return end -- this probably shouldnt fire, BUT.. creepermusher17 REALLY likes quantum tunnelling my desh stamps into the ae2 network, so... he'll figure out a way to trigger this, too.
+	if lock then return end -- impatient players...
+	if table_length(detect_item(transposer, spatial_io_side, nil, true)) == 0 then return end -- there's no spatial i/o cell in 1st slot (or any), cancel.
+	
+	-- EMIT SIGNAL!! THE SHEER POWER OF THE SUN!!!! BLAST IT!!! *BOOM*
+	while detect_item(transposer, spatial_io_side)[2] == nil do 
+		spatial_io_signaller.setOutput({9001}) -- it's over 9000... i dont even watch DBZ, why am i making this reference..
+		os.sleep(2) 
+		spatial_io_signaller.setOutput({0}) 
 	end
-	print("initializing event listener")
-
-	while true do -- (yes. the only cancellation is turning off the PC. CRY. about it.)
-		transportPlayer(event.pull(0.1, "redstone_changed")) -- feeding args!! YUMMY!
-		local item_detected = detect_item(transposer, rocket_transport_side, 9, true)
-		if not item_detected or table_length(item_detected) == 0 then transportPlayer(event.pull(1, "redstone_changed")) goto main_loop_continue end
-		print("payload!")
-		-- PAYLOAD HAS ARRIVED!!! :DDDDDD
-		lock = true
-		
-		for i = 10, transposer.getInventorySize(rocket_transport_side) do -- idiot proofing incase SOMEONE decides to put extra items into the extractor (Genius!)
-			local transfer_item_return = transposer.transferItem(rocket_transport_side, spatial_io_side, 1, i, 1)
-			print(transfer_item_return)
-			if transfer_item_return ~= 0 then break end
-		end
-		-- Return the payload back into the material world.
-		while detect_item(transposer, spatial_io_side)[2] == nil do 
-			spatial_io_signaller.setOutput({9001}) -- it's over 9000... i dont even watch DBZ, why am i making this reference..
-			os.sleep(2) 
-			spatial_io_signaller.setOutput({0}) 
-		end
-		-- Once it has been detected on return, just move it back, ready for another button press!
-		transposer.transferItem(spatial_io_side, spatial_io_side, 1, 2, 1)
-
-		lock = false
-		print("unlocking")
-		::main_loop_continue::
-	end
-end)
-if not success then
-	warn("PROGRAM DIED WITH ERROR:")
-	warn("ERROR:")
-	warn(error_msg)
-	print(debug.getinfo(1))
+	-- once it has been detected (it BETTER be detected... lest it go into an infinite loop.), reset.
+	spatial_io_signaller.setOutput({0})
+	transposer.transferItem(spatial_io_side, rocket_transport_insert_side, 1, 2, 1) -- hopefully no one floods the insertion thing with hematite.
 end
-warn("BYE!")
+print("initializing event listener")
+
+while true do -- (yes. the only cancellation is turning off the PC. CRY. about it.)
+	transportPlayer(event.pull(0.1, "redstone_changed")) -- feeding args!! YUMMY!
+	local item_detected = detect_item(transposer, rocket_transport_side, 9, true)
+	if not item_detected or table_length(item_detected) == 0 then transportPlayer(event.pull(1, "redstone_changed")) goto main_loop_continue end
+	print("payload!")
+	-- PAYLOAD HAS ARRIVED!!! :DDDDDD
+	lock = true
+	
+	for i = 10, transposer.getInventorySize(rocket_transport_side) do -- idiot proofing incase SOMEONE decides to put extra items into the extractor (Genius!)
+		local transfer_item_return = transposer.transferItem(rocket_transport_side, spatial_io_side, 1, i, 1)
+		print(transfer_item_return)
+		if transfer_item_return ~= 0 then break end
+	end
+	-- Return the payload back into the material world.
+	while detect_item(transposer, spatial_io_side)[2] == nil do 
+		spatial_io_signaller.setOutput({9001}) -- it's over 9000... i dont even watch DBZ, why am i making this reference..
+		os.sleep(2) 
+		spatial_io_signaller.setOutput({0}) 
+	end
+	-- Once it has been detected on return, just move it back, ready for another button press!
+	transposer.transferItem(spatial_io_side, spatial_io_side, 1, 2, 1)
+
+	lock = false
+	print("unlocking")
+	::main_loop_continue::
+end
