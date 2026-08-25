@@ -11,5 +11,6 @@ You should use an unlinker to obtain your rocket again (make sure you can link t
 # What else should I know?
 There should be only one spatial cell in the overall system. If you did the recovery rocket process, you must take the other spatial cell out of the extractor to prevent an infinite loop of spatial cell swapping & poewr drain.
 You should always keep a transporter pad linker with all of your destinations (neatly labelled!) on you, within your backpack, or in an easily accessible AE2 system! (though if you're using a global AE2 system, why are you using this?)
+The minimum for this setup is 2 tier 1 memory cards, and a basic tier 1 computer setup.
 
 Happy warping!
