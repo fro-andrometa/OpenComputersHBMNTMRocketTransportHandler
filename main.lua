@@ -6,16 +6,6 @@ local function table_length(input_table)
 	return n
 end
 
--- Send a warning message.
--- @param1: warning_string: string | string to be warned..
-local function warn(warning_string)
-	if not term.isAvailable() then return end
-	warning_string = tostring(warning_string)
-	print("HERE IS A WARNING: -----")
-	print(warning_string)
-	print("THANK YOU FOR YOUR ATTENTION -----\n")
-end
-
 --@param1: transposer: Component (typically a Proxy, or a getPrimary)
 --@param2: block_side: int
 --@param3: inventory_offset: int: (optional) | used to offset for detecting items within an hbm ntm extractor
@@ -43,8 +33,8 @@ end
 local component = require("component")
 local transposers = component.list("transposer")
 local spatial_io_signal = component.list("redstone")
-assert(table_length(transposers) == 1, "Number of transposers connected must be one!")
-assert(table_length(spatial_io_signal) == 1, "Number of redstone controllers connected must be one!")
+assert(table_length(transposers) == 1, "Number of transposers connected must be exactly one! Current amount: "..tostring(table_length(transposers))
+assert(table_length(spatial_io_signal) == 1, "Number of redstone controllers connected must be exactly one! Current amount: "..tostring(table_length))
 
 local transposer = next(transposers)
 local spatial_io_signaller = next(spatial_io_signal)
